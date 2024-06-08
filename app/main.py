@@ -21,7 +21,7 @@ def response_body_builder(
 
     return (
         "HTTP/1.1 200 OK\r\n"
-        "Content-Encoding: gzip"
+        "Content-Encoding: gzip\r\n"
         f"Content-Type: {content_type}\r\n"
         f"Content-Length: {len(res_body)}\r\n"
         "Connection: close\r\n"

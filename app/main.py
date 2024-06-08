@@ -16,6 +16,24 @@ def response_body_builder(res_body: str, content_type: str = "text/plain"):
     )
 
 
+def body_builder(connection: socket.socket, data: str):
+    headers, body = data.split("\r\n\r\n", 1)
+    request_line = headers.splitlines()[0]
+    print(f"Received request: {request_line}")
+
+    # Process headers to find Content-Length
+    content_length = 0
+    for header in headers.splitlines():
+        if header.lower().startswith("content-length:"):
+            content_length = int(header.split(":")[1].strip())
+
+    # Read the request body if Content-Length is specified
+    if content_length > 0:
+        while len(body) < content_length:
+            body += connection.recv(1024).decode()
+    return body
+
+
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
@@ -47,7 +65,11 @@ def socket_last_mile(connection: socket.socket):
 
             break
 
-        url_path = data.split(" ")[1]
+        method, url_path = (
+            data.split(" ")[0],
+            data.split(" ")[1],
+        )
+        print(method, url_path)
 
         if url_path == "/":
             connection.send(b"HTTP/1.1 200 OK\r\n\r\n")
@@ -59,15 +81,23 @@ def socket_last_mile(connection: socket.socket):
         elif "/files/" in url_path:
             file_path = os.path.join(sys.argv[2], url_path.split("/")[-1])
 
-            if os.path.exists(file_path):
-                with open(file=file_path) as f:
-                    body = f.read()
+            if method == "GET":
 
-                    resp_data = response_body_builder(
-                        res_body=body, content_type="application/octet-stream"
-                    )
-            else:
-                resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
+                if os.path.exists(file_path):
+                    with open(file=file_path) as f:
+                        body = f.read()
+
+                        resp_data = response_body_builder(
+                            res_body=body, content_type="application/octet-stream"
+                        )
+                else:
+                    resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
+            if method == "POST":
+                file = open(file=file_path, mode="w+")
+                file.write(body_builder(connection=connection, data=data))
+                file.close()
+
+                resp_data = "HTTP/1.1 201 Created\r\n\r\n"
 
             ...
 

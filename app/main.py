@@ -12,6 +12,17 @@ def main():
     connection, address = server_socket.accept()
     print(f"connected address: {address}")
     print(connection)
+
+    def response_body_builder(res_body: str):
+        return (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            f"Content-Length: {len(res_body)}\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            f"{res_body}"
+        )
+
     try:
         while True:
             data = connection.recv(1024).decode()
@@ -24,15 +35,13 @@ def main():
             elif "/echo/" in url_path:
                 res_body = url_path.split("/")[-1]
 
-                response = (
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/plain\r\n"
-                    f"Content-Length: {len(res_body)}\r\n"
-                    "Connection: close\r\n"
-                    "\r\n"
-                    f"{res_body}"
-                )
-                connection.sendall(response.encode())
+                connection.sendall(response_body_builder(res_body=res_body).encode())
+
+            elif url_path == "/user-agent":
+
+                user_agent = data.split(" ")[-1]
+                connection.sendall(response_body_builder(res_body=user_agent).encode())
+
             else:
                 connection.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
 

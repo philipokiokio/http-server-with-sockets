@@ -19,8 +19,19 @@ def main():
                 break
             url_path = data.split(" ")[1]
 
-            if url_path != "/":
-                connection.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            if "/echo" in url_path:
+                res_body = url_path.split("/")[-1]
+
+                response = (
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/plain\r\n"
+                    f"Content-Length: {len(res_body)}\r\n"
+                    "Connection: close\r\n"
+                    "\r\n"
+                    f"{res_body}"
+                )
+                connection.sendall(response.encode())
+
             else:
                 connection.send(b"HTTP/1.1 200 OK\r\n\r\n")  # wait for client
     except (KeyboardInterrupt, Exception) as e:

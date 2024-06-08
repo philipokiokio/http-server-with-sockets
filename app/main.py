@@ -5,15 +5,46 @@ import os
 import sys
 
 
-def response_body_builder(res_body: str, content_type: str = "text/plain"):
+def response_body_builder(
+    res_body: str, content_type: str = "text/plain", is_encoded: bool = False
+):
+    if is_encoded is False:
+
+        return (
+            "HTTP/1.1 200 OK\r\n"
+            f"Content-Type: {content_type}\r\n"
+            f"Content-Length: {len(res_body)}\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+            f"{res_body}"
+        )
+
     return (
         "HTTP/1.1 200 OK\r\n"
+        "Content-Encoding: gzip"
         f"Content-Type: {content_type}\r\n"
         f"Content-Length: {len(res_body)}\r\n"
         "Connection: close\r\n"
         "\r\n"
         f"{res_body}"
     )
+
+
+def content_compression(data: str):
+
+    headers, _ = data.split("\r\n\r\n", 1)
+
+    allowed_compression = False
+    for header in headers.splitlines():
+        if header.lower().startswith("accept-encoding:"):
+            compression = str(header.split(":")[1].strip())
+
+            if compression == "gzip":
+                allowed_compression = True
+
+                break
+
+    return allowed_compression
 
 
 def body_builder(connection: socket.socket, data: str):
@@ -71,12 +102,16 @@ def socket_last_mile(connection: socket.socket):
         )
         print(method, url_path)
 
+        allowed_compression = content_compression(data=data)
+
         if url_path == "/":
             connection.send(b"HTTP/1.1 200 OK\r\n\r\n")
         elif "/echo/" in url_path:
             res_body = url_path.split("/")[-1]
 
-            resp_data = response_body_builder(res_body=res_body)
+            resp_data = response_body_builder(
+                res_body=res_body, is_encoded=allowed_compression
+            )
 
         elif "/files/" in url_path:
             file_path = os.path.join(sys.argv[2], url_path.split("/")[-1])
@@ -88,7 +123,9 @@ def socket_last_mile(connection: socket.socket):
                         body = f.read()
 
                         resp_data = response_body_builder(
-                            res_body=body, content_type="application/octet-stream"
+                            res_body=body,
+                            content_type="application/octet-stream",
+                            is_encoded=allowed_compression,
                         )
                 else:
                     resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
@@ -105,7 +142,9 @@ def socket_last_mile(connection: socket.socket):
 
             user_agent = data.split(" ")[-1]
 
-            resp_data = response_body_builder(res_body=user_agent.strip())
+            resp_data = response_body_builder(
+                res_body=user_agent.strip(), is_encoded=allowed_compression
+            )
 
         else:
             resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"

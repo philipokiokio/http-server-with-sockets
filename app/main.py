@@ -1,12 +1,14 @@
 # Uncomment this to pass the first stage
 import socket
 from threading import Thread
+import os
+import sys
 
 
-def response_body_builder(res_body: str):
+def response_body_builder(res_body: str, content_type: str = "text/plain"):
     return (
         "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/plain\r\n"
+        f"Content-Type: {content_type}\r\n"
         f"Content-Length: {len(res_body)}\r\n"
         "Connection: close\r\n"
         "\r\n"
@@ -40,9 +42,9 @@ def socket_last_mile(connection: socket.socket):
         data = connection.recv(1024).decode()
         if data is None:
             break
-
+        resp_data = "HTTP/1.1 400 Bad Request\r\n\r\n"
         if len(data.split(" ")) < 2:
-            connection.send(b"HTTP/1.1 400 Bad Request\r\n\r\n")
+
             break
 
         url_path = data.split(" ")[1]
@@ -52,17 +54,33 @@ def socket_last_mile(connection: socket.socket):
         elif "/echo/" in url_path:
             res_body = url_path.split("/")[-1]
 
-            connection.sendall(response_body_builder(res_body=res_body).encode())
+            resp_data = response_body_builder(res_body=res_body)
+
+        elif "/files/" in url_path:
+            file_path = os.path.join(sys.argv[2], url_path.split("/")[-1])
+
+            if os.path.exists(file_path):
+                with open(file=file_path) as f:
+                    body = f.read()
+
+                    resp_data = response_body_builder(
+                        res_body=body, content_type="application/octet-stream"
+                    )
+            else:
+                resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
+
+            ...
 
         elif url_path == "/user-agent":
 
             user_agent = data.split(" ")[-1]
-            connection.sendall(
-                response_body_builder(res_body=user_agent.strip()).encode()
-            )
+
+            resp_data = response_body_builder(res_body=user_agent.strip())
 
         else:
-            connection.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
+            resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
+
+        connection.sendall(resp_data.encode())
     connection.close()
 
 

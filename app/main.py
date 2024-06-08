@@ -31,7 +31,8 @@ def main():
                     f"{res_body}"
                 )
                 connection.sendall(response.encode())
-
+            elif url_path == "/":
+                connection.send(b"HTTP/1.1 404 Not Found\r\n\r\n")
             else:
                 connection.send(b"HTTP/1.1 200 OK\r\n\r\n")  # wait for client
     except (KeyboardInterrupt, Exception) as e:

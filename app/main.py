@@ -1,4 +1,5 @@
 # Uncomment this to pass the first stage
+from binascii import hexlify
 import socket
 from threading import Thread
 import os
@@ -26,7 +27,7 @@ def response_body_builder(
         f"Content-Length: {len(res_body)}\r\n"
         "Connection: close\r\n"
         "\r\n"
-        f"{res_body}"
+        f"{compress_body(data=res_body)}"
     )
 
 
@@ -38,9 +39,7 @@ def content_compression(data: str):
     for header in headers.splitlines():
         if header.lower().startswith("accept-encoding:"):
             compression = str(header.split(":")[1].strip())
-            print(compression)
             compression_list = compression.split(", ")
-            print(compression_list)
             if "gzip" in compression_list:
                 allowed_compression = True
 
@@ -65,6 +64,11 @@ def body_builder(connection: socket.socket, data: str):
         while len(body) < content_length:
             body += connection.recv(1024).decode()
     return body
+
+
+def compress_body(data: str):
+
+    return hexlify(data.encode()).decode()
 
 
 def main():

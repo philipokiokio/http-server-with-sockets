@@ -68,7 +68,7 @@ def body_builder(connection: socket.socket, data: str):
 
 def compress_body(data: str):
 
-    return hexlify(data.encode()).decode()
+    return "".join([hex(ord(c))[2:] for c in data])
 
 
 def main():

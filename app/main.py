@@ -1,5 +1,5 @@
 # Uncomment this to pass the first stage
-from binascii import hexlify
+import gzip
 import socket
 from threading import Thread
 import os
@@ -19,7 +19,7 @@ def response_body_builder(
             "\r\n"
             f"{res_body}"
         )
-
+    res_body = compress_body(data=res_body)
     return (
         "HTTP/1.1 200 OK\r\n"
         "Content-Encoding: gzip\r\n"
@@ -27,7 +27,7 @@ def response_body_builder(
         f"Content-Length: {len(res_body)}\r\n"
         "Connection: close\r\n"
         "\r\n"
-        f"{compress_body(data=res_body)}"
+        f"{res_body}"
     )
 
 
@@ -68,7 +68,7 @@ def body_builder(connection: socket.socket, data: str):
 
 def compress_body(data: str):
 
-    return "".join([hex(ord(c))[2:] for c in data])
+    return gzip.compress(data=data.encode())
 
 
 def main():

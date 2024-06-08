@@ -40,7 +40,9 @@ def main():
             elif url_path == "/user-agent":
 
                 user_agent = data.split(" ")[-1]
-                connection.sendall(response_body_builder(res_body=user_agent).encode())
+                connection.sendall(
+                    response_body_builder(res_body=user_agent.strip()).encode()
+                )
 
             else:
                 connection.send(b"HTTP/1.1 404 Not Found\r\n\r\n")

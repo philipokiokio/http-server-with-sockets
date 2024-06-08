@@ -19,19 +19,27 @@ def response_body_builder(
             "\r\n"
             f"{res_body}"
             "\r\n"
-        )
+        ).encode()
 
     res_body = compress_body(data=res_body)
-    print(res_body)
+    print(len(res_body))
+    print(
+        (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Encoding: gzip\r\n"
+            f"Content-Type: {content_type}\r\n"
+            f"Content-Length: {len(res_body)}\r\n\r\n"
+            "Connection: close\r\n\r\n"
+        ).encode()
+        + res_body
+    )
     return (
         "HTTP/1.1 200 OK\r\n"
         "Content-Encoding: gzip\r\n"
         f"Content-Type: {content_type}\r\n"
-        f"Content-Length: {len(res_body)}\r\n"
-        "Connection: close\r\n"
-        f"{res_body}"
-        "\r\n"
-    )
+        f"Content-Length: {len(res_body)}\r\n\r\n"
+        "Connection: close\r\n\r\n"
+    ).encode() + res_body
 
 
 def content_compression(data: str):
@@ -158,7 +166,7 @@ def socket_last_mile(connection: socket.socket):
         else:
             resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
 
-        connection.sendall(resp_data.encode())
+        connection.sendall(resp_data)
     connection.close()
 
 

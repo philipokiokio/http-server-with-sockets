@@ -38,8 +38,9 @@ def content_compression(data: str):
     for header in headers.splitlines():
         if header.lower().startswith("accept-encoding:"):
             compression = str(header.split(":")[1].strip())
-
-            if compression == "gzip":
+            compression_list = compression.split(" ")
+            print(compression_list)
+            if "gzip" in compression_list:
                 allowed_compression = True
 
                 break

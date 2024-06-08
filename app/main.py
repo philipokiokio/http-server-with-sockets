@@ -11,7 +11,21 @@ def main():
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
     connection, address = server_socket.accept()
     print(f"connected address: {address}")
-    connection.sendall(b"HTTP/1.1 200 OK\r\n\r\n")  # wait for client
+    print(connection)
+    try:
+        while True:
+            data = connection.recv(1024).decode()
+            if data is None:
+                break
+            url_path = data.split(" ")[1]
+
+            if url_path != "/":
+                connection.send(b"HTTP/1.1 404 NOT FOUND\r\n\r\n")
+            else:
+                connection.send(b"HTTP/1.1 200 OK\r\n\r\n")  # wait for client
+    except (KeyboardInterrupt, Exception) as e:
+
+        connection.close()
 
 
 if __name__ == "__main__":

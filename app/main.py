@@ -113,7 +113,7 @@ def socket_last_mile(connection: socket.socket):
         allowed_compression = content_compression(data=data)
 
         if url_path == "/":
-            connection.send(b"HTTP/1.1 200 OK\r\n\r\n")
+            resp_data = b"HTTP/1.1 200 OK\r\n\r\n"
         elif "/echo/" in url_path:
             res_body = url_path.split("/")[-1]
 
@@ -136,13 +136,13 @@ def socket_last_mile(connection: socket.socket):
                             is_encoded=allowed_compression,
                         )
                 else:
-                    resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
-            if method == "POST":
+                    resp_data = "HTTP/1.1 404 Not Found\r\n\r\n".encode()
+            elif method == "POST":
                 file = open(file=file_path, mode="w+")
                 file.write(body_builder(connection=connection, data=data))
                 file.close()
 
-                resp_data = "HTTP/1.1 201 Created\r\n\r\n"
+                resp_data = "HTTP/1.1 201 Created\r\n\r\n".encode()
 
             ...
 

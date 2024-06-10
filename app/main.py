@@ -155,7 +155,7 @@ def socket_last_mile(connection: socket.socket):
             )
 
         else:
-            resp_data = "HTTP/1.1 404 Not Found\r\n\r\n"
+            resp_data = "HTTP/1.1 404 Not Found\r\n\r\n".encode()
 
         connection.sendall(resp_data)
     connection.close()
